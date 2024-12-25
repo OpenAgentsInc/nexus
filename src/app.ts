@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import { openai } from '@ai-sdk/openai';
 import { CoreMessage, streamText } from 'ai';
 import dotenv from 'dotenv';
@@ -18,8 +18,8 @@ interface ChatRequest {
   sessionId: string;
 }
 
-app.post('/chat', async (req: Request<{}, any, ChatRequest>, res: Response) => {
-  const { message, sessionId } = req.body;
+app.post('/chat', async (req, res) => {
+  const { message, sessionId } = req.body as ChatRequest;
   
   if (!sessionId || !message) {
     return res.status(400).json({ error: 'Missing sessionId or message' });
@@ -66,9 +66,10 @@ app.post('/chat', async (req: Request<{}, any, ChatRequest>, res: Response) => {
 });
 
 // Health check endpoint
-app.get('/', (_req: Request, res: Response) => {
+app.get('/', (_req, res) => {
   res.send('Chat API is running');
 });
 
 app.listen(port, '0.0.0.0', () => {
   return console.log(`Express is listening at http://0.0.0.0:${port}`);
+});
