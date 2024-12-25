@@ -66,17 +66,17 @@ export const viewFileTool = (context: ToolContext): CoreTool<typeof viewFilePara
   },
 });
 
-// View hierarchy tool
-const viewHierarchyParams = z.object({
-  path: z.string().describe("The path to view the hierarchy"),
+// View folder tool
+const viewFolderParams = z.object({
+  path: z.string().describe("The path to view the folder contents"),
   owner: z.string().describe("The owner of the repository"),
   repo: z.string().describe("The name of the repository"),
-  branch: z.string().describe("The branch to view the hierarchy from"),
+  branch: z.string().describe("The branch to view the folder from"),
 });
 
-type ViewHierarchyParams = z.infer<typeof viewHierarchyParams>;
+type ViewFolderParams = z.infer<typeof viewFolderParams>;
 
-type ViewHierarchyResult = {
+type ViewFolderResult = {
   success: boolean;
   contents?: string[];
   error?: string;
@@ -84,15 +84,15 @@ type ViewHierarchyResult = {
   details: string;
 };
 
-export const viewHierarchyTool = (context: ToolContext): CoreTool<typeof viewHierarchyParams, ViewHierarchyResult> => tool({
-  description: "View file/folder hierarchy at path (one level deep)",
-  parameters: viewHierarchyParams,
-  execute: async ({ path, owner, repo, branch }: ViewHierarchyParams): Promise<ViewHierarchyResult> => {
+export const viewFolderTool = (context: ToolContext): CoreTool<typeof viewFolderParams, ViewFolderResult> => tool({
+  description: "View folder contents at path (one level deep)",
+  parameters: viewFolderParams,
+  execute: async ({ path, owner, repo, branch }: ViewFolderParams): Promise<ViewFolderResult> => {
     if (!context.gitHubToken) {
       return {
         success: false,
         error: "Missing GitHub token",
-        summary: "Failed to view hierarchy due to missing GitHub token",
+        summary: "Failed to view folder contents due to missing GitHub token",
         details: "The GitHub token is missing. Please ensure it is provided in the context."
       };
     }
@@ -128,7 +128,7 @@ export const viewHierarchyTool = (context: ToolContext): CoreTool<typeof viewHie
 // Export all tools
 export const allTools = {
   view_file: { tool: viewFileTool, description: "View file contents at path" },
-  view_hierarchy: { tool: viewHierarchyTool, description: "View file/folder hierarchy at path" },
+  view_folder: { tool: viewFolderTool, description: "View folder contents at path" },
 } as const;
 
 type ToolName = keyof typeof allTools;
