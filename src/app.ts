@@ -56,7 +56,7 @@ const chatHandler: RequestHandler = async (req, res) => {
     // Convert to stream response and pipe to Express response
     const streamResponse = result.toDataStreamResponse();
     const reader = streamResponse.body?.getReader();
-    
+
     if (!reader) {
       throw new Error('No stream reader available');
     }
@@ -97,4 +97,5 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 app.use(errorHandler);
 
 app.listen(port, '0.0.0.0', () => {
-  return console.log(`Express is listening at http://0.0.0.0:${port}`);\n});
+  return console.log(`Express is listening at http://0.0.0.0:${port}`);
+});
