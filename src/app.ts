@@ -21,9 +21,12 @@ const chatHandler: RequestHandler = async (req, res) => {
     const { messages } = req.body;
     console.log("In chatHandler with messages", messages)
 
+    // Filter out any messages that might have empty content
+    const validMessages = messages.filter(msg => msg.content && msg.content.trim() !== '');
+
     const result = await generateText({
       model: google('gemini-1.5-pro'),
-      messages: convertToCoreMessages(messages),
+      messages: convertToCoreMessages(validMessages),
       system: SYSTEM_PROMPT
     });
 
