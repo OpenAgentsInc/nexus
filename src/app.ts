@@ -15,30 +15,13 @@ const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-// Store messages per session (in memory - should be moved to a proper database for production)
-const sessions: Record<string, CoreMessage[]> = {};
-
 interface ChatRequest {
-  message: string;
-  sessionId: string;
+  messages: CoreMessage[];
 }
 
 const chatHandler: RequestHandler = async (req, res, next) => {
   try {
-    const { message, sessionId } = req.body as ChatRequest;
-
-    if (!sessionId || !message) {
-      res.status(400).json({ error: 'Missing sessionId or message' });
-      return;
-    }
-
-    // Initialize session if it doesn't exist
-    if (!sessions[sessionId]) {
-      sessions[sessionId] = [];
-    }
-
-    // Add user message to history
-    sessions[sessionId].push({ role: 'user', content: message });
+    const { messages } = req.body as ChatRequest;
 
     // Set up SSE
     res.setHeader('Content-Type', 'text/event-stream');
@@ -47,7 +30,7 @@ const chatHandler: RequestHandler = async (req, res, next) => {
 
     const result = streamText({
       model: google('gemini-1.5-pro'),
-      messages: sessions[sessionId],
+      messages,
     });
 
     let fullResponse = '';
@@ -57,9 +40,6 @@ const chatHandler: RequestHandler = async (req, res, next) => {
       fullResponse += delta;
       res.write(`data: ${JSON.stringify({ delta })}\\n\\n`);
     }
-
-    // Add assistant's message to history
-    sessions[sessionId].push({ role: 'assistant', content: fullResponse });
 
     // End the stream
     res.write('data: [DONE]\\n\\n');
