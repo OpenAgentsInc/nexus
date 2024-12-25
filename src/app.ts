@@ -21,12 +21,19 @@ const chatHandler: RequestHandler = async (req, res) => {
     const { messages } = req.body;
     console.log("In chatHandler with messages", messages)
 
-    // Filter out any messages that might have empty content
-    const validMessages = messages.filter(msg => msg.content && msg.content.trim() !== '');
+    // Clean up messages to ensure valid format for Gemini
+    const cleanMessages = messages.map(msg => ({
+      role: msg.role,
+      content: msg.content.trim(),
+      // Remove empty toolInvocations
+      ...(msg.role === 'assistant' && msg.toolInvocations?.length > 0
+        ? { toolInvocations: msg.toolInvocations }
+        : {})
+    }));
 
     const result = await generateText({
       model: google('gemini-1.5-pro'),
-      messages: convertToCoreMessages(validMessages),
+      messages: convertToCoreMessages(cleanMessages),
       system: SYSTEM_PROMPT
     });
 
