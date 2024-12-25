@@ -1,5 +1,5 @@
 import express, { RequestHandler, ErrorRequestHandler } from "express";
-import { openai } from '@ai-sdk/openai';
+import { vertex } from '@ai-sdk/google-vertex';
 import { CoreMessage, streamText } from 'ai';
 import dotenv from 'dotenv';
 
@@ -9,6 +9,18 @@ const app = express();
 const port = parseInt(process.env.PORT || '3000', 10);
 
 app.use(express.json());
+
+// Configure Vertex AI
+const vertexAI = vertex({
+  project: process.env.GOOGLE_VERTEX_PROJECT,
+  location: 'us-central1',
+  googleAuthOptions: {
+    credentials: {
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_PRIVATE_KEY,
+    },
+  },
+});
 
 // Store messages per session (in memory - should be moved to a proper database for production)
 const sessions: Record<string, CoreMessage[]> = {};
@@ -41,7 +53,7 @@ const chatHandler: RequestHandler = async (req, res, next) => {
     res.setHeader('Connection', 'keep-alive');
 
     const result = streamText({
-      model: openai('gpt-4'),
+      model: vertexAI('gemini-1.5-pro'),
       messages: sessions[sessionId],
     });
 
@@ -50,14 +62,14 @@ const chatHandler: RequestHandler = async (req, res, next) => {
     // Stream the response
     for await (const delta of result.textStream) {
       fullResponse += delta;
-      res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+      res.write(`data: ${JSON.stringify({ delta })}\\n\\n`);
     }
 
     // Add assistant's message to history
     sessions[sessionId].push({ role: 'assistant', content: fullResponse });
 
     // End the stream
-    res.write('data: [DONE]\n\n');
+    res.write('data: [DONE]\\n\\n');
     res.end();
   } catch (error) {
     next(error);
@@ -76,7 +88,7 @@ app.get('/', healthCheck);
 // Error handler
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error('Server error:', err);
-  res.write(`data: ${JSON.stringify({ error: 'Server error occurred' })}\n\n`);
+  res.write(`data: ${JSON.stringify({ error: 'Server error occurred' })}\\n\\n`);
   res.end();
 };
 
