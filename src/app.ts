@@ -2,6 +2,7 @@ import { CoreMessage, generateText, streamText } from "ai"
 import dotenv from "dotenv"
 import express, { ErrorRequestHandler, RequestHandler } from "express"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
+import { SYSTEM_PROMPT } from "./constants"
 
 dotenv.config();
 
@@ -27,9 +28,10 @@ const chatHandler: RequestHandler = async (req, res) => {
     const result = await generateText({
       model: google('gemini-1.5-pro'),
       messages,
+      system: SYSTEM_PROMPT
     });
 
-    console.log("Result is", result)
+    console.log("Result: ", result.text)
     res.json({ result });
   } catch (error) {
     console.error('Chat error:', error);
