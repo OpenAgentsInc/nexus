@@ -18,12 +18,13 @@ interface ChatRequest {
   sessionId: string;
 }
 
-const chatHandler: RequestHandler = async (req, res, next) => {
+const chatHandler: RequestHandler = async (req, res, next): Promise<void> => {
   try {
     const { message, sessionId } = req.body as ChatRequest;
     
     if (!sessionId || !message) {
-      return res.status(400).json({ error: 'Missing sessionId or message' });
+      res.status(400).json({ error: 'Missing sessionId or message' });
+      return;
     }
 
     // Initialize session if it doesn't exist
@@ -66,16 +67,20 @@ const chatHandler: RequestHandler = async (req, res, next) => {
 app.post('/chat', chatHandler);
 
 // Health check endpoint
-app.get('/', ((_req, res) => {
+const healthCheck: RequestHandler = (_req, res) => {
   res.send('Chat API is running');
-}) as RequestHandler);
+};
+
+app.get('/', healthCheck);
 
 // Error handler
-app.use(((err, _req, res, _next) => {
+const errorHandler: RequestHandler = (err, _req, res, _next) => {
   console.error('Server error:', err);
   res.write(`data: ${JSON.stringify({ error: 'Server error occurred' })}\n\n`);
   res.end();
-}) as RequestHandler);
+};
+
+app.use(errorHandler);
 
 app.listen(port, '0.0.0.0', () => {
   return console.log(`Express is listening at http://0.0.0.0:${port}`);
