@@ -29,6 +29,8 @@ const chatHandler: any = async (req, res, next) => {
     messages,
   });
 
+  console.log("Result is", result)
+
   return result
 };
 
