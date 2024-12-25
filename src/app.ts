@@ -1,4 +1,4 @@
-import { convertToCoreMessages, generateText } from "ai"
+import { convertToCoreMessages, streamText } from "ai"
 import dotenv from "dotenv"
 import express, { ErrorRequestHandler, RequestHandler } from "express"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
@@ -22,6 +22,11 @@ const chatHandler: RequestHandler = async (req, res) => {
     const { messages, githubToken, tools: toolNames = [] } = req.body;
     console.log("In chatHandler with messages", messages)
 
+    // Set headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
     // Create tool context with GitHub token
     const toolContext: ToolContext = {
       gitHubToken: githubToken
@@ -40,7 +45,7 @@ const chatHandler: RequestHandler = async (req, res) => {
         : {})
     }));
 
-    const result = await generateText({
+    const result = await streamText({
       model: google('gemini-1.5-pro'),
       messages: convertToCoreMessages(cleanMessages),
       system: SYSTEM_PROMPT,
@@ -48,11 +53,28 @@ const chatHandler: RequestHandler = async (req, res) => {
       maxSteps: 5
     });
 
-    console.log("Result: ", result)
-    res.json({ result });
+    // Convert to stream response and pipe to Express response
+    const streamResponse = result.toDataStreamResponse();
+    const reader = streamResponse.body?.getReader();
+    
+    if (!reader) {
+      throw new Error('No stream reader available');
+    }
+
+    // Read and forward the stream
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        res.end();
+        break;
+      }
+      res.write(value);
+    }
+
   } catch (error) {
     console.error('Chat error:', error);
-    res.status(500).json({ error: 'Failed to process chat request' });
+    res.write(`data: ${JSON.stringify({ error: 'Failed to process chat request' })}\n\n`);
+    res.end();
   }
 };
 
@@ -75,5 +97,4 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 app.use(errorHandler);
 
 app.listen(port, '0.0.0.0', () => {
-  return console.log(`Express is listening at http://0.0.0.0:${port}`);
-});
+  return console.log(`Express is listening at http://0.0.0.0:${port}`);\n});
