@@ -19,13 +19,18 @@ interface ChatRequest {
   messages: CoreMessage[];
 }
 
+
 const chatHandler: any = async (req, res, next) => {
+  console.log("In chatHandler")
   const { messages } = req.body as ChatRequest;
+  console.log("Have messages", messages)
 
   const result = streamText({
     model: google('gemini-1.5-pro'),
     messages,
   });
+
+  console.log("Result", result)
 
   return result.toDataStreamResponse();
 };
