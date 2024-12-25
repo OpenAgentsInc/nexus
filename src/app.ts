@@ -19,19 +19,22 @@ interface ChatRequest {
   messages: CoreMessage[];
 }
 
+const chatHandler: RequestHandler = async (req, res) => {
+  try {
+    const { messages } = req.body as ChatRequest;
+    console.log("In chatHandler with messages", messages)
 
-const chatHandler: any = async (req, res, next) => {
-  const { messages } = req.body as ChatRequest;
-  console.log("In chatHandler with messages", messages)
+    const result = await generateText({
+      model: google('gemini-1.5-pro'),
+      messages,
+    });
 
-  const result = generateText({
-    model: google('gemini-1.5-pro'),
-    messages,
-  });
-
-  console.log("Result is", result)
-
-  return result
+    console.log("Result is", result)
+    res.json({ result });
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ error: 'Failed to process chat request' });
+  }
 };
 
 app.post('/chat', chatHandler);
