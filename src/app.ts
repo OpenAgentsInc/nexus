@@ -3,6 +3,7 @@ import dotenv from "dotenv"
 import express, { ErrorRequestHandler, RequestHandler } from "express"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { SYSTEM_PROMPT } from "./constants"
+import { getTools, ToolContext } from "./tools"
 
 dotenv.config();
 
@@ -18,8 +19,16 @@ const google = createGoogleGenerativeAI({
 
 const chatHandler: RequestHandler = async (req, res) => {
   try {
-    const { messages } = req.body;
+    const { messages, githubToken, tools: toolNames = [] } = req.body;
     console.log("In chatHandler with messages", messages)
+
+    // Create tool context with GitHub token
+    const toolContext: ToolContext = {
+      gitHubToken: githubToken
+    };
+
+    // Get requested tools
+    const tools = getTools(toolContext, toolNames);
 
     // Clean up messages to ensure valid format for Gemini
     const cleanMessages = messages.map(msg => ({
@@ -34,10 +43,12 @@ const chatHandler: RequestHandler = async (req, res) => {
     const result = await generateText({
       model: google('gemini-1.5-pro'),
       messages: convertToCoreMessages(cleanMessages),
-      system: SYSTEM_PROMPT
+      system: SYSTEM_PROMPT,
+      tools,
+      maxSteps: 5
     });
 
-    console.log("Result: ", result.text)
+    console.log("Result: ", result)
     res.json({ result });
   } catch (error) {
     console.error('Chat error:', error);
@@ -57,7 +68,7 @@ app.get('/', healthCheck);
 // Error handler
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error('Server error:', err);
-  res.write(`data: ${JSON.stringify({ error: 'Server error occurred' })}\\n\\n`);
+  res.write(`data: ${JSON.stringify({ error: 'Server error occurred' })}\n\n`);
   res.end();
 };
 
