@@ -1,7 +1,7 @@
-import express, { RequestHandler, ErrorRequestHandler } from "express";
-import { GoogleGenerativeAI } from '@ai-sdk/google';
-import { CoreMessage, streamText } from 'ai';
-import dotenv from 'dotenv';
+import { CoreMessage, streamText } from "ai"
+import dotenv from "dotenv"
+import express, { ErrorRequestHandler, RequestHandler } from "express"
+import { createGoogleGenerativeAI } from "@ai-sdk/google"
 
 dotenv.config();
 
@@ -11,7 +11,7 @@ const port = parseInt(process.env.PORT || '3000', 10);
 app.use(express.json());
 
 // Configure Google Generative AI
-const genAI = new GoogleGenerativeAI({
+const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
@@ -26,7 +26,7 @@ interface ChatRequest {
 const chatHandler: RequestHandler = async (req, res, next) => {
   try {
     const { message, sessionId } = req.body as ChatRequest;
-    
+
     if (!sessionId || !message) {
       res.status(400).json({ error: 'Missing sessionId or message' });
       return;
@@ -46,7 +46,7 @@ const chatHandler: RequestHandler = async (req, res, next) => {
     res.setHeader('Connection', 'keep-alive');
 
     const result = streamText({
-      model: genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }),
+      model: google('gemini-1.5-pro'),
       messages: sessions[sessionId],
     });
 
