@@ -1,4 +1,4 @@
-import { CoreMessage, generateText, streamText } from "ai"
+import { convertToCoreMessages, generateText } from "ai"
 import dotenv from "dotenv"
 import express, { ErrorRequestHandler, RequestHandler } from "express"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
@@ -16,18 +16,14 @@ const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-interface ChatRequest {
-  messages: CoreMessage[];
-}
-
 const chatHandler: RequestHandler = async (req, res) => {
   try {
-    const { messages } = req.body as ChatRequest;
+    const { messages } = req.body;
     console.log("In chatHandler with messages", messages)
 
     const result = await generateText({
       model: google('gemini-1.5-pro'),
-      messages,
+      messages: convertToCoreMessages(messages),
       system: SYSTEM_PROMPT
     });
 
