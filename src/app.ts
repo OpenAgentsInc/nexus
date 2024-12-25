@@ -19,34 +19,15 @@ interface ChatRequest {
   messages: CoreMessage[];
 }
 
-const chatHandler: RequestHandler = async (req, res, next) => {
-  try {
-    const { messages } = req.body as ChatRequest;
+const chatHandler: any = async (req, res, next) => {
+  const { messages } = req.body as ChatRequest;
 
-    // Set up SSE
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+  const result = streamText({
+    model: google('gemini-1.5-pro'),
+    messages,
+  });
 
-    const result = streamText({
-      model: google('gemini-1.5-pro'),
-      messages,
-    });
-
-    let fullResponse = '';
-
-    // Stream the response
-    for await (const delta of result.textStream) {
-      fullResponse += delta;
-      res.write(`data: ${JSON.stringify({ delta })}\\n\\n`);
-    }
-
-    // End the stream
-    res.write('data: [DONE]\\n\\n');
-    res.end();
-  } catch (error) {
-    next(error);
-  }
+  return result.toDataStreamResponse();
 };
 
 app.post('/chat', chatHandler);
