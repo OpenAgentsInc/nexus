@@ -1,5 +1,5 @@
 import express, { RequestHandler, ErrorRequestHandler } from "express";
-import { vertex } from '@ai-sdk/google-vertex';
+import { GoogleGenerativeAI } from '@ai-sdk/google';
 import { CoreMessage, streamText } from 'ai';
 import dotenv from 'dotenv';
 
@@ -10,16 +10,9 @@ const port = parseInt(process.env.PORT || '3000', 10);
 
 app.use(express.json());
 
-// Configure Vertex AI
-const vertexAI = vertex({
-  project: process.env.GOOGLE_VERTEX_PROJECT,
-  location: 'us-central1',
-  googleAuthOptions: {
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY,
-    },
-  },
+// Configure Google Generative AI
+const genAI = new GoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
 // Store messages per session (in memory - should be moved to a proper database for production)
@@ -53,7 +46,7 @@ const chatHandler: RequestHandler = async (req, res, next) => {
     res.setHeader('Connection', 'keep-alive');
 
     const result = streamText({
-      model: vertexAI('gemini-1.5-pro'),
+      model: genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }),
       messages: sessions[sessionId],
     });
 
