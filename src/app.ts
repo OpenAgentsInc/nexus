@@ -44,10 +44,11 @@ const chatHandler: RequestHandler = async (req, res) => {
       model: google('gemini-1.5-pro'),
       messages: convertToCoreMessages(cleanMessages),
       system: SYSTEM_PROMPT,
-      tools
+      tools,
+      maxSteps: 5
     });
 
-    console.log("Result: ", result.text)
+    console.log("Result: ", result)
     res.json({ result });
   } catch (error) {
     console.error('Chat error:', error);
