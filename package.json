@@ -4,11 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "tsc && node dist/app.js",
     "lint": "eslint src/**/*.ts"
   },
   "keywords": [],
   "author": "Christopher David <chris@openagents.com>",
-  "license": "CC-0",
+  "license": "CC0-1.0",
   "devDependencies": {
     "@eslint/js": "9.17.0",
     "@types/express": "4.17.1",
