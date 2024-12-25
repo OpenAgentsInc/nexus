@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { openai } from '@ai-sdk/openai';
 import { CoreMessage, streamText } from 'ai';
 import dotenv from 'dotenv';
@@ -18,27 +18,27 @@ interface ChatRequest {
   sessionId: string;
 }
 
-app.post('/chat', async (req, res) => {
-  const { message, sessionId } = req.body as ChatRequest;
-  
-  if (!sessionId || !message) {
-    return res.status(400).json({ error: 'Missing sessionId or message' });
-  }
-
-  // Initialize session if it doesn't exist
-  if (!sessions[sessionId]) {
-    sessions[sessionId] = [];
-  }
-
-  // Add user message to history
-  sessions[sessionId].push({ role: 'user', content: message });
-
-  // Set up SSE
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-
+const chatHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const { message, sessionId } = req.body as ChatRequest;
+    
+    if (!sessionId || !message) {
+      return res.status(400).json({ error: 'Missing sessionId or message' });
+    }
+
+    // Initialize session if it doesn't exist
+    if (!sessions[sessionId]) {
+      sessions[sessionId] = [];
+    }
+
+    // Add user message to history
+    sessions[sessionId].push({ role: 'user', content: message });
+
+    // Set up SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
     const result = streamText({
       model: openai('gpt-4'),
       messages: sessions[sessionId],
@@ -59,15 +59,22 @@ app.post('/chat', async (req, res) => {
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (error) {
-    console.error('Streaming error:', error);
-    res.write(`data: ${JSON.stringify({ error: 'Streaming error occurred' })}\n\n`);
-    res.end();
+    next(error);
   }
-});
+};
+
+app.post('/chat', chatHandler);
 
 // Health check endpoint
-app.get('/', (_req, res) => {
+app.get('/', (_req: Request, res: Response) => {
   res.send('Chat API is running');
+});
+
+// Error handler
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('Server error:', err);
+  res.write(`data: ${JSON.stringify({ error: 'Server error occurred' })}\n\n`);
+  res.end();
 });
 
 app.listen(port, '0.0.0.0', () => {
