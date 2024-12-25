@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { RequestHandler } from "express";
 import { openai } from '@ai-sdk/openai';
 import { CoreMessage, streamText } from 'ai';
 import dotenv from 'dotenv';
@@ -18,7 +18,7 @@ interface ChatRequest {
   sessionId: string;
 }
 
-const chatHandler = async (req: Request, res: Response, next: NextFunction) => {
+const chatHandler: RequestHandler = async (req, res, next) => {
   try {
     const { message, sessionId } = req.body as ChatRequest;
     
@@ -66,16 +66,16 @@ const chatHandler = async (req: Request, res: Response, next: NextFunction) => {
 app.post('/chat', chatHandler);
 
 // Health check endpoint
-app.get('/', (_req: Request, res: Response) => {
+app.get('/', ((_req, res) => {
   res.send('Chat API is running');
-});
+}) as RequestHandler);
 
 // Error handler
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+app.use(((err, _req, res, _next) => {
   console.error('Server error:', err);
   res.write(`data: ${JSON.stringify({ error: 'Server error occurred' })}\n\n`);
   res.end();
-});
+}) as RequestHandler);
 
 app.listen(port, '0.0.0.0', () => {
   return console.log(`Express is listening at http://0.0.0.0:${port}`);
