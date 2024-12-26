@@ -75,7 +75,31 @@ const chatHandler: RequestHandler = async (req, res) => {
         res.end();
         break;
       }
-      res.write(value);
+      
+      // Parse and clean up the data before sending
+      try {
+        const text = new TextDecoder().decode(value);
+        const lines = text.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6); // Remove 'data: ' prefix
+            if (data === '[DONE]') continue;
+            
+            try {
+              // Parse and re-stringify to clean up escaping
+              const parsed = JSON.parse(data);
+              res.write(`data: ${JSON.stringify(parsed)}\n\n`);
+            } catch {
+              // If it's not JSON, send as is
+              res.write(`data: ${data}\n\n`);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error processing stream chunk:', e);
+        res.write(value);
+      }
     }
 
   } catch (error) {
