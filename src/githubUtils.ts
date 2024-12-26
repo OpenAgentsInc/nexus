@@ -36,7 +36,11 @@ export async function githubReadFile(args: {
     throw new Error('The path does not point to a file');
   }
 
-  return Buffer.from(data.content, 'base64').toString('utf-8');
+  // Decode content without any additional processing
+  const content = Buffer.from(data.content, 'base64').toString('utf-8');
+  
+  // Return raw content without any escaping
+  return content;
 }
 
 export async function githubListContents(args: { 
