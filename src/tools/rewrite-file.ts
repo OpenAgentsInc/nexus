@@ -2,7 +2,7 @@ import { CoreTool, tool } from "ai"
 import { z } from "zod"
 import { githubRewriteFile } from "../githubUtils"
 import { ToolContext } from "./types"
-import { formatNewlines } from "./utils"
+import { normalizeContent } from "./utils"
 
 const params = z.object({
   path: z.string().describe("The path of the file to rewrite"),
@@ -38,9 +38,12 @@ export const rewriteFileTool = (context: ToolContext): CoreTool<typeof params, R
       }
 
       try {
+        // Normalize the content before writing
+        const normalizedContent = normalizeContent(content);
+        
         const { oldContent } = await githubRewriteFile({
           path,
-          content: formatNewlines(content),
+          content: normalizedContent,
           token: context.gitHubToken,
           repoOwner: owner,
           repoName: repo,
@@ -51,8 +54,8 @@ export const rewriteFileTool = (context: ToolContext): CoreTool<typeof params, R
           success: true,
           summary: `Updated ${path}`,
           details: `File ${path} has been successfully updated in ${owner}/${repo} on branch ${branch}.`,
-          newContent: content,
-          oldContent,
+          newContent: normalizedContent,
+          oldContent: normalizeContent(oldContent), // Also normalize the old content
         };
       } catch (error) {
         console.error("Error rewriting file:", error);
