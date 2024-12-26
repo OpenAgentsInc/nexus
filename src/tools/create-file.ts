@@ -2,7 +2,7 @@ import { CoreTool, tool } from "ai"
 import { z } from "zod"
 import { githubCreateFile } from "../githubUtils"
 import { ToolContext } from "./types"
-import { formatNewlines } from "./utils"
+import { normalizeContent } from "./utils"
 
 const params = z.object({
   path: z.string().describe("The path where the new file should be created"),
@@ -36,9 +36,12 @@ export const createFileTool = (context: ToolContext): CoreTool<typeof params, Re
       }
 
       try {
+        // Normalize the content before creating the file
+        const normalizedContent = normalizeContent(content);
+        
         await githubCreateFile({
           path,
-          content: formatNewlines(content),
+          content: normalizedContent,
           token: context.gitHubToken,
           repoOwner: owner,
           repoName: repo,
@@ -47,7 +50,7 @@ export const createFileTool = (context: ToolContext): CoreTool<typeof params, Re
 
         return {
           success: true,
-          content: `File ${path} created successfully.`,
+          content: normalizedContent,
           summary: `Created file at ${path}`,
           details: `File ${path} was created in the repository ${owner}/${repo} on branch ${branch}.`,
         };
