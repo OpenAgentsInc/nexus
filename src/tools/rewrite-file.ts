@@ -1,7 +1,7 @@
 import { CoreTool, tool } from "ai";
 import { z } from "zod";
 import { ToolContext } from "./types";
-import { Octokit } from "@octokit/rest";
+import { githubRewriteFile } from '../githubUtils';
 
 const params = z.object({
   path: z.string().describe('The path of the file to rewrite'),
@@ -35,41 +35,23 @@ export const rewriteFileTool = (context: ToolContext): CoreTool<typeof params, R
       };
     }
 
-    const octokit = new Octokit({ auth: context.gitHubToken });
-
     try {
-      // Get the current file to retrieve its SHA and content
-      const { data: currentFile } = await octokit.repos.getContent({
-        owner,
-        repo,
+      const { oldContent } = await githubRewriteFile({
         path,
-        ref: branch,
+        content,
+        token: context.gitHubToken,
+        repoOwner: owner,
+        repoName: repo,
+        branch
       });
 
-      if ('sha' in currentFile && 'content' in currentFile) {
-        const currentContent = Buffer.from(currentFile.content, 'base64').toString('utf-8');
-
-        // Update the file
-        const { data } = await octokit.repos.createOrUpdateFileContents({
-          owner,
-          repo,
-          path,
-          message: `Update ${path}`,
-          content: Buffer.from(content).toString('base64'),
-          sha: currentFile.sha,
-          branch,
-        });
-
-        return {
-          success: true,
-          summary: `Updated ${path}`,
-          details: `File ${path} has been successfully updated in ${owner}/${repo} on branch ${branch}. Commit SHA: ${data.commit.sha}`,
-          newContent: content,
-          oldContent: currentContent,
-        };
-      } else {
-        throw new Error('Unable to retrieve file SHA or content');
-      }
+      return {
+        success: true,
+        summary: `Updated ${path}`,
+        details: `File ${path} has been successfully updated in ${owner}/${repo} on branch ${branch}.`,
+        newContent: content,
+        oldContent,
+      };
     } catch (error) {
       console.error('Error rewriting file:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
