@@ -1,5 +1,5 @@
 import { allTools } from "./tools"
-import { ToolContext } from "./types"
+import { ToolContext } from "./tools"
 
 export function getSystemPrompt(context: ToolContext, selectedTools: string[]): string {
   const { repos } = context
