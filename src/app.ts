@@ -19,11 +19,11 @@ const google = createGoogleGenerativeAI({
 
 const chatHandler: RequestHandler = async (req, res) => {
   try {
-    const { 
-      messages, 
-      githubToken, 
+    const {
+      messages,
+      githubToken,
       tools: toolNames = [],
-      repos = [] 
+      repos = []
     } = req.body;
     console.log("In chatHandler with messages", messages)
     console.log("Active repos:", repos)
@@ -57,7 +57,7 @@ const chatHandler: RequestHandler = async (req, res) => {
       messages: convertToCoreMessages(cleanMessages),
       system: getSystemPrompt(toolContext, Object.keys(tools)),
       tools,
-      maxSteps: 5
+      maxSteps: 15
     });
 
     // Convert to stream response and pipe to Express response
