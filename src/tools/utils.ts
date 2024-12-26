@@ -1,0 +1,1 @@
+export function formatNewlines(content: string): string {\n  return content.replace(/\\\\n/g, '\\n');\n}
