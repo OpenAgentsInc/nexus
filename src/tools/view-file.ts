@@ -42,11 +42,20 @@ export const viewFileTool = (context: ToolContext): CoreTool<typeof params, Resu
         branch
       });
 
+      // Create a clean summary that doesn't include the full content
+      const summary = `Viewed ${path} in ${owner}/${repo} on branch ${branch}`;
+      
+      // Create details with the content, using JSON.stringify to properly escape once
+      const details = {
+        message: `File contents of ${path} in ${owner}/${repo} on branch ${branch} have been retrieved:`,
+        content
+      };
+
       return {
         success: true,
-        content: content,
-        summary: `Viewed ${path} in ${owner}/${repo} on branch ${branch}`,
-        details: `File contents of ${path} in ${owner}/${repo} on branch ${branch} have been retrieved:\n\n${content}`
+        content,
+        summary,
+        details: JSON.stringify(details)
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
