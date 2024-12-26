@@ -2,7 +2,7 @@ import { convertToCoreMessages, streamText } from "ai"
 import dotenv from "dotenv"
 import express, { ErrorRequestHandler, RequestHandler } from "express"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
-import { SYSTEM_PROMPT } from "./constants"
+import { getSystemPrompt } from "./constants"
 import { getTools, ToolContext } from "./tools"
 
 dotenv.config();
@@ -19,17 +19,24 @@ const google = createGoogleGenerativeAI({
 
 const chatHandler: RequestHandler = async (req, res) => {
   try {
-    const { messages, githubToken, tools: toolNames = [] } = req.body;
+    const { 
+      messages, 
+      githubToken, 
+      tools: toolNames = [],
+      repos = [] 
+    } = req.body;
     console.log("In chatHandler with messages", messages)
+    console.log("Active repos:", repos)
 
     // Set headers for SSE
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    // Create tool context with GitHub token
+    // Create tool context with GitHub token and repos
     const toolContext: ToolContext = {
-      gitHubToken: githubToken
+      gitHubToken: githubToken,
+      repos: repos as { owner: string; name: string; branch: string }[]
     };
 
     // Get requested tools
@@ -48,7 +55,7 @@ const chatHandler: RequestHandler = async (req, res) => {
     const result = await streamText({
       model: google('gemini-1.5-pro'),
       messages: convertToCoreMessages(cleanMessages),
-      system: SYSTEM_PROMPT,
+      system: getSystemPrompt(toolContext, Object.keys(tools)),
       tools,
       maxSteps: 5
     });
