@@ -5,6 +5,7 @@ import { githubReadFile, githubListContents } from './githubUtils';
 // Tool context interface
 export interface ToolContext {
   gitHubToken?: string;
+  repos?: { owner: string; name: string; branch: string }[];
 }
 
 // View file tool
