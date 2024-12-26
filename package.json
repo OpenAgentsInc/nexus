@@ -23,6 +23,7 @@
     "@ai-sdk/google-vertex": "^2.0.12",
     "@ai-sdk/openai": "1.0.11",
     "@google-cloud/vertexai": "^1.9.2",
+    "@octokit/rest": "^21.0.2",
     "ai": "4.0.22",
     "dotenv": "16.4.7",
     "express": "4.17.1",
