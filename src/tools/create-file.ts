@@ -1,6 +1,6 @@
 import { tool, CoreTool } from 'ai';
 import { z } from 'zod';
-import { Octokit } from '@octokit/rest';
+import { githubCreateFile } from '../githubUtils';
 import { ToolContext } from './types';
 
 const params = z.object({
@@ -33,17 +33,14 @@ export const createFileTool = (context: ToolContext): CoreTool<typeof params, Re
       };
     }
 
-    const octokit = new Octokit({ auth: context.gitHubToken });
-    console.log(`Creating file on branch: ${branch}`);
-
     try {
-      await octokit.repos.createOrUpdateFileContents({
-        owner,
-        repo,
+      await githubCreateFile({
         path,
-        message: `Create file ${path}`,
-        content: Buffer.from(content).toString('base64'),
-        branch,
+        content,
+        token: context.gitHubToken,
+        repoOwner: owner,
+        repoName: repo,
+        branch
       });
 
       return {
